@@ -1,5 +1,10 @@
 # Fitness Studio Booking API
 
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)
+
 A Booking API for a fictional fitness studio, built with **Python + FastAPI**, **SQLAlchemy** and **SQLite**. Users sign up, log in (JWT), browse upcoming classes, create classes, book slots and view their bookings.
 
 ## Features
@@ -146,3 +151,91 @@ Per-IP sliding window: `/signup`, `/login` and `/refresh` allow 10 requests per 
 - Overbooking is prevented with a single conditional `UPDATE ... WHERE available_slots > 0`, so concurrent requests cannot oversell.
 - Passwords are hashed with salted PBKDF2-SHA256.
 - `GET /classes` is public (as in the spec's "view upcoming classes"); creating, booking and viewing bookings need a token.
+
+## Demo
+
+No hosted demo is deployed. Run it locally (see [Run Locally](#run-locally)) and open the interactive Swagger UI at http://127.0.0.1:8000/docs:
+
+1. `POST /signup`, then `POST /login` and copy the `access_token`.
+2. Click **Authorize** in Swagger and paste the token.
+3. Try `POST /classes`, `GET /classes`, `POST /book` and `GET /bookings`.
+
+Example `GET /classes` response (the `X-Total-Count` header carries the total):
+
+```json
+[
+  {
+    "id": 1,
+    "name": "HIIT Session",
+    "dateTime": "2030-06-18T13:30:00+05:30",
+    "instructor": "Jane Smith",
+    "availableSlots": 10
+  }
+]
+```
+
+## Deployment
+
+Any host that runs Python works (Render, Railway, a VPS):
+
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Before deploying: set a strong `SECRET_KEY`, point `DATABASE_URL` at a persistent database, and note that the rate limiter is in-memory (use one worker, or move it to Redis).
+
+## Documentation
+
+- Interactive Swagger UI: `/docs`
+- ReDoc: `/redoc`
+- OpenAPI schema: `/openapi.json`
+
+## Roadmap
+
+- Cancel a booking and return the slot
+- Alembic database migrations
+- Dockerfile and CI workflow
+- Redis-backed rate limiting and token revocation on logout
+
+## Related
+
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLAlchemy](https://www.sqlalchemy.org/)
+- [PyJWT](https://pyjwt.readthedocs.io/)
+
+## Used By
+
+This project was built as a backend internship assignment and is not used in production.
+
+## About the Author
+
+Hi, I'm **Vishal Nor**, a full-stack developer based in Mumbai, India, with 1+ years of experience building and deploying production web applications.
+
+- **Focus:** Python (FastAPI, Flask), REST API design, SQL, Redis, and cloud deployment on AWS (EC2, RDS)
+- **Frontend:** React, Next.js, Vue.js, Server-Side Rendering
+- **Integrations:** Razorpay, CCAvenue and other third-party REST APIs
+- **Recent work:** e-commerce platforms, POS systems and custom CRMs, including a live production platform that has processed 350+ bookings
+- **Education:** B.Sc. Information Technology, Thakur College of Science & Commerce, Mumbai
+- **Highlights:** 1st Prize in the "Code Combat" coding competition; Introduction to Python Programming certification (Dataquest.io)
+
+GitHub: [@vishalnor](https://github.com/vishalnor)
+
+## Feedback
+
+Found a bug or have a suggestion? Open an issue on the [GitHub repository](https://github.com/vishalnor/Fitness-Studio-Booking-API---Assignment/issues).
+
+## Acknowledgements
+
+- [FastAPI](https://fastapi.tiangolo.com/) for the framework and automatic OpenAPI docs
+- [readme.so](https://readme.so/) for the README editor
+
+## Appendix
+
+### Timezone handling
+
+Class times are stored as naive IST (`Asia/Kolkata`) values. Incoming datetimes with an offset (for example `Z`) are converted to IST; values without an offset are assumed to be IST. Responses are returned in IST by default, or in any IANA timezone via `?tz=`.
+
+### Tokens
+
+Access tokens last 30 minutes and refresh tokens 7 days (configurable). Use `POST /refresh` with a refresh token to get a new pair.
